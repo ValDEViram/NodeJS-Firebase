@@ -1,5 +1,4 @@
 import { hash, compare } from 'bcrypt'
-import { randomUUID } from 'crypto'
 import { db } from '../firebase.js' // Corrige la importación
 import admin from 'firebase-admin' // Importar admin
 
@@ -19,7 +18,7 @@ export class userRepository {
       const hashPassword = await hash(userData.password, 10) // Espera al hash
 
       await userRef.set({
-        id: randomUUID(), // ID del documento generado
+        id: crypto.randomUUID(), // ID del documento generado
         email: userData.email, // Email pasado en userData
         username: userData.username, // Username pasado en userData
         password: hashPassword, // Contraseña cifrada
