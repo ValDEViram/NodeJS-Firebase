@@ -14,12 +14,33 @@ router.post('/addProductsUser', async (req, res) => {
   }
 })
 
-router.post('/addProduct', async (req, res) => {
-  const { productName, marca, cantidad, precio, categoria, imgSource } = req.body
+router.patch('/editProduct/:id', async (req, res) => {
+  const { id } = req.params
+  const { product, brand, quantity, price, category, stock, offer, imgName } = req.body
+
+  console.log('Actualizando producto con ID:', id)
+  console.log('Datos recibidos:', req.body)
 
   try {
-    await productRepository.addProduct({ productName, marca, cantidad, precio, categoria, imgSource })
-    res.status(201).send('Se agrego el producto correctamente', productName, marca, cantidad, precio)
+    const updatedProduct = await productRepository.editProduct({ id, product, brand, quantity, price, category, stock, offer, imgName })
+
+    if (updatedProduct) {
+      res.status(200).send('Producto editado correctamente :)')
+    } else {
+      res.status(404).send('Producto no encontrado')
+    }
+  } catch (error) {
+    console.error('Error al actualizar el producto:', error)
+    res.status(500).json({ 'Error al actualizar el producto': error })
+  }
+})
+
+router.post('/addProduct', async (req, res) => {
+  const { productName, brand, quantity, price, category, imgName } = req.body
+
+  try {
+    await productRepository.addProduct({ productName, brand, quantity, price, category, imgName })
+    res.status(201).send('Se agrego el producto correctamente', productName, brand, quantity, price)
   } catch (error) {
     res.status(500).json({ 'Error al subir producto ': error })
   }
@@ -31,6 +52,34 @@ router.get(('/products'), async (req, res) => {
     res.status(201).send(products)
   } catch (error) {
     res.status(500).json({ 'Error al conseguir los productos': error })
+  }
+})
+
+router.get('/products/:ID', async (req, res) => {
+  const { ID } = req.params
+  try {
+    const product = await productRepository.getProductByID(ID)
+    if (product) {
+      res.status(200).send(product)
+    } else {
+      res.status(404).send({ message: 'Producto no encontrado' })
+    }
+  } catch (error) {
+    res.status(500).json({ 'Error al conseguir el producto': error })
+  }
+})
+
+router.get('/getProductByCategory/:category', async (req, res) => {
+  const { category } = req.params
+  try {
+    const product = await productRepository.getProductByCategory(category)
+    if (product) {
+      res.status(200).send(product)
+    } else {
+      res.status(404).send({ message: 'Producto no encontrado' })
+    }
+  } catch (error) {
+    res.status(500).json({ 'Error al conseguir el producto': error })
   }
 })
 

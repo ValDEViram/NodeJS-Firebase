@@ -7,7 +7,7 @@ import authRouter from './controllers/auth.controller.js'
 const app = express()
 app.use(json())
 
-const allowedOrigins = ['http://localhost:8100', 'http://localhost:8101'] // Puedes agregar más
+const allowedOrigins = ['http://localhost:8100', 'http://localhost:8101', 'http://localhost:5173']
 
 app.use(cors({
   origin: function (origin, callback) {
@@ -18,7 +18,7 @@ app.use(cors({
       callback(new Error('No permitido por CORS'))
     }
   },
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  methods: ['GET', 'POST', 'DELETE', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }))
 
