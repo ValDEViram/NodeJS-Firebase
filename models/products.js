@@ -11,7 +11,19 @@ export class productRepository {
       quantity: product.quantity,
       price: product.price,
       category: product.category,
+      stock: product.stock,
+      offer: product.offer,
       imgName: product.imgName
+    })
+  }
+
+  static async addCategory ({ category, imgURL }) {
+    const categoryRef = db.collection('categories').doc()
+
+    await categoryRef.set({
+      id: crypto.randomUUID(),
+      category,
+      imgURL
     })
   }
 
@@ -87,19 +99,19 @@ export class productRepository {
   }
 
   static async getCategories () {
-    const productsRef = db.collection('products')
-    const snapshot = await productsRef.get()
+    const categoriesRef = db.collection('categories')
+    const snapshot = await categoriesRef.get()
 
     if (snapshot.empty) {
       console.log('No se encontraron productos')
       return []
     }
 
-    const categories = new Set()
-    snapshot.forEach((product) => {
-      categories.add(product.data().category)
-    })
+    const categories = []
+    snapshot.forEach((product) => (
+      categories.push({ id: product.id, ...product.data() })
+    ))
 
-    return Array.from(categories)
+    return categories
   }
 }

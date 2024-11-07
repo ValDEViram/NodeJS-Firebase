@@ -36,13 +36,24 @@ router.patch('/editProduct/:id', async (req, res) => {
 })
 
 router.post('/addProduct', async (req, res) => {
-  const { productName, brand, quantity, price, category, imgName } = req.body
+  const { productName, brand, quantity, price, category, stock, offer, imgName } = req.body
 
   try {
-    await productRepository.addProduct({ productName, brand, quantity, price, category, imgName })
+    await productRepository.addProduct({ productName, brand, quantity, price, category, stock, offer, imgName })
     res.status(201).send('Se agrego el producto correctamente', productName, brand, quantity, price)
   } catch (error) {
     res.status(500).json({ 'Error al subir producto ': error })
+  }
+})
+
+router.post('/addCategory', async (req, res) => {
+  const { category, imgURL } = req.body
+
+  try {
+    await productRepository.addCategory({ category, imgURL })
+    res.status(201).send('Se agrego la categoria correctamente', category, imgURL)
+  } catch (error) {
+    res.status(500).json({ 'Error al registrar la categoria ': error })
   }
 })
 
