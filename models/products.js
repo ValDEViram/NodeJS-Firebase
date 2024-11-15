@@ -1,10 +1,9 @@
-import { db } from '../firebase.js'
+import { connectDB } from '../mongodb.js'
 
 export class productRepository {
   static async addProduct (product) {
-    const productRef = db.collection('products').doc()
-
-    await productRef.set({
+    const db = await connectDB()
+    const productData = ({
       id: crypto.randomUUID(),
       product: product.productName,
       brand: product.brand,
@@ -13,34 +12,27 @@ export class productRepository {
       category: product.category,
       stock: product.stock,
       offer: product.offer,
+      fetchName: product.fetchName,
       imgName: product.imgName
     })
+    await db.collection('products').insertOne(productData)
+    return productData
   }
 
   static async addCategory ({ category, imgURL }) {
-    const categoryRef = db.collection('categories').doc()
-
-    await categoryRef.set({
+    const db = await connectDB()
+    const categoryData = ({
       id: crypto.randomUUID(),
       category,
       imgURL
     })
+    await db.collection('categories').insertOne(categoryData)
+    return categoryData
   }
 
   static async editProduct (product) {
-    const productsRef = db.collection('products')
+    const db = await connectDB()
 
-    if (!product.id) {
-      throw new Error('El ID del producto es requerido para la actualización')
-    }
-
-    const snapshot = await productsRef.where('id', '==', product.id).get()
-    if (snapshot.empty) {
-      console.log('No se encontró el producto con el ID especificado')
-      return null
-    }
-
-    const productDoc = snapshot.docs[0].ref
     const updateData = {
       product: product.product,
       brand: product.brand,
@@ -52,66 +44,53 @@ export class productRepository {
 
     if (product.stock !== undefined) updateData.stock = product.stock
     if (product.offer !== undefined) updateData.offer = product.offer
+    if (product.fetchName !== undefined) updateData.fetchName = product.fetchName
 
-    await productDoc.update(updateData)
-    return { id: product.id, ...product }
+    const result = await db.collection('products').findOneAndUpdate(
+      { _id: product.id },
+      { $set: updateData },
+      { returnDocument: 'after' }
+    )
+
+    return result.value
   }
 
   static async getProducts () {
-    const productsRef = db.collection('products')
-    const snapshot = await productsRef.get()
-
-    if (snapshot.empty) {
-      console.log('No se encontraron productos')
-      return []
-    }
-
-    const products = []
-    snapshot.forEach((product) => {
-      products.push({ id: product.id, ...product.data() })
-    })
-
+    const db = await connectDB()
+    const products = await db.collection('products').find().toArray()
     return products
   }
 
   static async getProductByID (ID) {
-    const productsRef = db.collection('products')
-    const snapshot = await productsRef.where('id', '==', ID).get()
+    const db = await connectDB()
+    const product = await db.collection('products').findOne({ id: ID })
+    if (!product) throw new Error('El producto no existe en la base de datos')
+    return product
+  }
 
-    if (snapshot.empty) {
-      throw new Error('No se encontro el producto con el ID especificado')
+  static async getProductsByChar (character) {
+    if (!character || character.trim() === '') {
+      throw new Error('El parámetro de búsqueda no puede estar vacío')
     }
+    const db = await connectDB()
 
-    // Si el snapshot no está vacío, obtenemos el primer documento que coincide
-    const productData = snapshot.docs[0].data()
-    return productData
+    const products = db.collection('products').find({
+      product: { $regex: character, $options: 'i' }
+    }).toArray()
+    if (products.length === 0) throw new Error('No se encontraron productos que coincidan con la busqueda')
+    return products
   }
 
   static async getProductByCategory (category) {
-    const productsRef = db.collection('products')
-    const snapshot = await productsRef.where('category', '==', category).get()
-
-    if (snapshot.empty) {
-      throw new Error('No se encontraron productos con esa categoría')
-    }
-    const productData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
-    return productData
+    const db = connectDB()
+    const products = db.collection('products').find({ category }).toArray()
+    if (!products) throw new Error('No se encontro ningun producto con esa categoria')
+    return products
   }
 
   static async getCategories () {
-    const categoriesRef = db.collection('categories')
-    const snapshot = await categoriesRef.get()
-
-    if (snapshot.empty) {
-      console.log('No se encontraron productos')
-      return []
-    }
-
-    const categories = []
-    snapshot.forEach((product) => (
-      categories.push({ id: product.id, ...product.data() })
-    ))
-
+    const db = connectDB()
+    const categories = await db.collection('categories').find().toArray()
     return categories
   }
 }

@@ -4,6 +4,7 @@ import admin from 'firebase-admin'
 import nodemailer from 'nodemailer'
 import 'dotenv/config'
 import jwt from 'jsonwebtoken'
+import { productRepository } from './products.js'
 
 export class userRepository {
   static async createUser (userData) {
@@ -137,32 +138,89 @@ export class userRepository {
     }
   }
 
-  static async addProducts (userData) {
+  static async addProducts ({ id, productos }) {
     try {
       const userQuerySnapshot = await db.collection('users')
-        .where('id', '==', userData.id)
+        .where('id', '==', id)
         .get() // Obtener la referencia al documento del usuario
 
       if (userQuerySnapshot.empty) {
         throw new Error('No existe el usuario')
       }
 
-      // Suponiendo que solo hay un documento que coincide
       const userDoc = userQuerySnapshot.docs[0] // Obtener el primer documento
 
-      // Obtener los productos existentes
       const existingProducts = userDoc.data().products || []
 
-      // Combinar productos existentes con los nuevos
-      const updatedProducts = [...existingProducts, ...userData.productos]
+      const updatedProducts = [...existingProducts]
+      productos.forEach((product) => {
+        const index = existingProducts.findIndex(p => p.productID === product.productID)
+        if (index !== -1) {
+          updatedProducts[index].amount += product.amount
+        } else {
+          updatedProducts.push(product)
+        }
+      })
 
       // Actualizar los productos del usuario
       await userDoc.ref.update({ products: updatedProducts })
 
-      console.log('Productos agregados al usuario: ', userData.id, '\n Productos: ', updatedProducts)
+      console.log('Productos agregados al usuario: ', id, '\n Productos: ', updatedProducts)
     } catch (error) {
       console.error('Error creando usuario en Firestore:', error)
       throw new Error(error.message || 'Error al crear el usuario') // Asegúrate de lanzar un mensaje específico
     }
+  }
+
+  static async getProductsInCart ({ ID }) {
+    try {
+      const userQuerySnapshot = await db.collection('users')
+        .where('id', '==', ID)
+        .get()
+      if (userQuerySnapshot.empty) {
+        throw new Error('No existe el usuario')
+      }
+
+      const userDoc = userQuerySnapshot.docs[0]
+
+      const userProducts = userDoc.data().products
+      return userProducts
+    } catch (error) {
+      console.log('Erorr al obtener los productos guardados', error)
+    }
+  }
+
+  static listenToCartUpdates ({ ID }, onUpdate) {
+    const userQuery = db.collection('users').where('id', '==', ID)
+
+    // Escuchar cambios en tiempo real en los productos del usuario
+    const unsubscribe = userQuery.onSnapshot(async (snapshot) => {
+      if (snapshot.empty) {
+        console.error('No existe el usuario')
+        return
+      }
+
+      const userDoc = snapshot.docs[0]
+      let userProducts = userDoc.data().products || []
+
+      // Actualizar datos de cada producto en el carrito
+      userProducts = await Promise.all(
+        userProducts.map(async (product) => {
+          const storeProduct = await productRepository.getProductByID(product.productID)
+          return {
+            ...product,
+            productName: storeProduct.productName,
+            price: storeProduct.price,
+            imgName: storeProduct.imgName
+          }
+        })
+      )
+
+      // Llama a la función onUpdate con los datos actualizados
+      onUpdate(userProducts)
+    })
+
+    // Devuelve la función para cancelar la suscripción si se necesita
+    return unsubscribe
   }
 }

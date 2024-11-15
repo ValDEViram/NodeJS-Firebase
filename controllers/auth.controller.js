@@ -2,6 +2,7 @@ import { db } from '../firebase.js'
 import { userRepository } from '../models/users.js'
 import express from 'express'
 import 'dotenv/config'
+import jwt from 'jsonwebtoken'
 
 const router = express.Router()
 
@@ -83,6 +84,20 @@ router.get('/getUsers', async (req, res) => {
     res.status(201).send(users)
   } catch (error) {
     res.status(500).json({ message: 'Error al conseguir los usuarios', error })
+  }
+})
+
+router.get('/status', (req, res) => {
+  const token = req.cookies['auth-token']
+  if (!token) {
+    return res.status(401).json({ authenticated: false })
+  }
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET)
+    res.status(200).json({ authenticated: true, user: decoded })
+  } catch (error) {
+    res.status(401).json({ authenticated: false })
   }
 })
 

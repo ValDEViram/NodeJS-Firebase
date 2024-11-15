@@ -5,24 +5,25 @@ import express from 'express'
 const router = express.Router()
 
 router.post('/addProductsUser', async (req, res) => {
-  const { id, productos } = req.body
+  const { id, productos } = req.body // `productos` debe ser un array de productos con detalles
+
   try {
     await userRepository.addProducts({ id, productos })
-    res.status(201).send(`Se agregaron correctamente los productos: ${productos} al usuario: ${id}`)
+    res.status(201).send(`Se agregaron correctamente los productos al usuario: ${id}`)
   } catch (error) {
-    res.status(500).json({ 'Error al actualizar el usuario': error })
+    res.status(500).json({ error: 'Error al actualizar el usuario', details: error.message })
   }
 })
 
 router.patch('/editProduct/:id', async (req, res) => {
   const { id } = req.params
-  const { product, brand, quantity, price, category, stock, offer, imgName } = req.body
+  const { product, brand, quantity, price, category, stock, offer, fetchName, imgName } = req.body
 
   console.log('Actualizando producto con ID:', id)
   console.log('Datos recibidos:', req.body)
 
   try {
-    const updatedProduct = await productRepository.editProduct({ id, product, brand, quantity, price, category, stock, offer, imgName })
+    const updatedProduct = await productRepository.editProduct({ id, product, brand, quantity, price, category, stock, offer, fetchName, imgName })
 
     if (updatedProduct) {
       res.status(200).send('Producto editado correctamente :)')
@@ -36,10 +37,10 @@ router.patch('/editProduct/:id', async (req, res) => {
 })
 
 router.post('/addProduct', async (req, res) => {
-  const { productName, brand, quantity, price, category, stock, offer, imgName } = req.body
+  const { productName, brand, quantity, price, category, stock, offer, fetchName, imgName } = req.body
 
   try {
-    await productRepository.addProduct({ productName, brand, quantity, price, category, stock, offer, imgName })
+    await productRepository.addProduct({ productName, brand, quantity, price, category, stock, offer, fetchName, imgName })
     res.status(201).send('Se agrego el producto correctamente', productName, brand, quantity, price)
   } catch (error) {
     res.status(500).json({ 'Error al subir producto ': error })
@@ -66,6 +67,28 @@ router.get(('/products'), async (req, res) => {
   }
 })
 
+router.get('/products/search/:searchCharacters', async (req, res) => {
+  const { searchCharacters } = req.params
+
+  // Verificamos si 'searchCharacters' está presente y no es vacío
+  if (!searchCharacters || searchCharacters.trim() === '') {
+    return res.status(400).json({ message: 'El parámetro de búsqueda no puede estar vacío' })
+  }
+
+  try {
+    const products = await productRepository.getProductsByChar(searchCharacters)
+
+    if (!products || products.length === 0) {
+      return res.status(404).json({ message: 'No se encontraron productos que coincidan con la búsqueda' })
+    }
+
+    res.status(200).json(products)
+  } catch (error) {
+    console.error('Error al conseguir los productos:', error)
+    res.status(500).json({ message: 'Error al conseguir los productos', error: error.toString() })
+  }
+})
+
 router.get('/products/:ID', async (req, res) => {
   const { ID } = req.params
   try {
@@ -80,7 +103,7 @@ router.get('/products/:ID', async (req, res) => {
   }
 })
 
-router.get('/getProductByCategory/:category', async (req, res) => {
+router.get('/getProducts/:category', async (req, res) => {
   const { category } = req.params
   try {
     const product = await productRepository.getProductByCategory(category)
@@ -100,6 +123,16 @@ router.get(('/categories'), async (req, res) => {
     res.status(201).send(categories)
   } catch (error) {
     res.status(500).json({ 'Error al conseguir los productos': error })
+  }
+})
+
+router.get(('/user/getProducts/:ID'), async (req, res) => {
+  const ID = req.params
+  try {
+    const userProducts = await userRepository.getProductsInCart(ID)
+    res.status(210).send(userProducts)
+  } catch (error) {
+    res.status(500).json({ 'Error al conseguir los productos guardados del usuario': error })
   }
 })
 
