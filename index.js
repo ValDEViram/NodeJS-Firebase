@@ -29,7 +29,5 @@ app.use('/api/upload', uploadRouter)
 app.use('/api/products', productsRouter)
 app.use('/api/auth', authRouter)
 
-const PORT = process.env.PORT || 3000
-app.listen(PORT, () => {
-  console.log(`Servidor corriendo en el puerto ${PORT}`)
-})
+// Aquí no se usa `app.listen` porque Vercel maneja las funciones serverless automáticamente
+export default app
