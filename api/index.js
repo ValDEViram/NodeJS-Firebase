@@ -1,8 +1,8 @@
 import express, { json } from 'express'
 import cors from 'cors'
-import uploadRouter from './controllers/upload.controller.js'
-import productsRouter from './controllers/products.controller.js'
-import authRouter from './controllers/auth.controller.js'
+import uploadRouter from '../controllers/upload.controller.js'
+import productsRouter from '../controllers/products.controller.js'
+import authRouter from '../controllers/auth.controller.js'
 import cookieParser from 'cookie-parser'
 
 const app = express()
@@ -33,5 +33,4 @@ app.use('/api/upload', uploadRouter)
 app.use('/api/products', productsRouter)
 app.use('/api/auth', authRouter)
 
-// Aquí no se usa `app.listen` porque Vercel maneja las funciones serverless automáticamente
 export default app
