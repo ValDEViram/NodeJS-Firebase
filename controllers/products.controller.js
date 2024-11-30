@@ -1,15 +1,16 @@
 import { userRepository } from '../models/users.js'
 import { productRepository } from '../models/products.js'
 import express from 'express'
+import webPush from '../pushService.js'
 
 const router = express.Router()
 
 router.post('/addProductsUser', async (req, res) => {
-  const { id, productos } = req.body // `productos` debe ser un array de productos con detalles
+  const { userID, productos } = req.body // `productos` debe ser un array de productos con detalles
 
   try {
-    await userRepository.addProducts({ id, productos })
-    res.status(201).send(`Se agregaron correctamente los productos al usuario: ${id}`)
+    await userRepository.addProducts({ userID, productos })
+    res.status(201).send(`Se agregaron correctamente los productos al usuario: ${userID}`)
   } catch (error) {
     res.status(500).json({ error: 'Error al actualizar el usuario', details: error.message })
   }
@@ -117,12 +118,13 @@ router.get('/getProducts/:category', async (req, res) => {
   }
 })
 
-router.get(('/categories'), async (req, res) => {
+router.get('/categories', async (req, res) => {
   try {
     const categories = await productRepository.getCategories()
     res.status(201).send(categories)
   } catch (error) {
-    res.status(500).json({ 'Error al conseguir los productos': error })
+    console.error('Error al conseguir las categorías:', error) // Log detallado
+    res.status(500).json({ message: 'Error al conseguir las categorías', error: error.message })
   }
 })
 
@@ -133,6 +135,53 @@ router.get(('/user/getProducts/:ID'), async (req, res) => {
     res.status(210).send(userProducts)
   } catch (error) {
     res.status(500).json({ 'Error al conseguir los productos guardados del usuario': error })
+  }
+})
+
+// Simularemos una base de datos
+const subscriptions = []
+
+// Endpoint para guardar suscripción
+router.post('/subscribe', (req, res) => {
+  const subscription = req.body
+
+  // Validar la suscripción
+  if (!subscription || !subscription.endpoint) {
+    return res.status(400).json({ error: 'Suscripción inválida' })
+  }
+
+  // Guardar la suscripción en la base de datos simulada
+  subscriptions.push(subscription)
+  console.log('Nueva suscripción:', subscription)
+
+  res.status(201).json({ message: 'Suscripción guardada' })
+})
+
+router.post('/send-notification', async (req, res) => {
+  const payload = JSON.stringify({
+    title: 'Tu pedido está en camino',
+    body: '¡Tu pedido llegará pronto! Gracias por comprar con nosotros.',
+    icon: '/assets/icons/icon-192x192.png',
+    data: { url: '/shoping-cart' },
+    actions: [
+      { action: 'open', title: 'Abrir App' },
+      { action: 'close', title: 'Cerrar Notificación' }
+    ]
+  })
+
+  // Enviar notificaciones a todas las suscripciones almacenadas
+  const sendNotifications = subscriptions.map((subscription) =>
+    webPush.sendNotification(subscription, payload).catch((error) => {
+      console.error('Error al enviar notificación:', error)
+    })
+  )
+
+  try {
+    await Promise.all(sendNotifications)
+    res.status(200).json({ message: 'Notificaciones enviadas' })
+  } catch (error) {
+    console.error('Error al enviar notificaciones:', error)
+    res.sendStatus(500)
   }
 })
 

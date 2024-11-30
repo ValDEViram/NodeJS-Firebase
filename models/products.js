@@ -74,7 +74,7 @@ export class productRepository {
     }
     const db = await connectDB()
 
-    const products = db.collection('products').find({
+    const products = await db.collection('products').find({
       product: { $regex: character, $options: 'i' }
     }).toArray()
     if (products.length === 0) throw new Error('No se encontraron productos que coincidan con la busqueda')
@@ -82,15 +82,18 @@ export class productRepository {
   }
 
   static async getProductByCategory (category) {
-    const db = connectDB()
-    const products = db.collection('products').find({ category }).toArray()
+    const db = await connectDB()
+    const products = await db.collection('products').find({ category }).toArray()
     if (!products) throw new Error('No se encontro ningun producto con esa categoria')
     return products
   }
 
   static async getCategories () {
-    const db = connectDB()
+    const db = await connectDB()
     const categories = await db.collection('categories').find().toArray()
+    if (!categories.length) {
+      throw new Error('No se encontraron categorías')
+    }
     return categories
   }
 }

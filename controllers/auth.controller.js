@@ -19,7 +19,7 @@ router.post('/register', async (req, res) => {
   // Llamar a la función que guarda el usuario en Firestore
   try {
     await userRepository.createUser({ email, username, password })
-    res.status(201).json({ message: 'Usuario creado exitosamente' })
+    res.status(201).json({ message: 'El registro fue exitoso', email })
   } catch (error) {
     res.status(500).json({ message: error.message || 'Error creando el usuario', error })
   }
@@ -37,7 +37,7 @@ router.post('/sendVerification', async (req, res) => {
       .get()
 
     if (userSnapshot.empty) {
-      return res.staturs(400).json({ message: 'Codigo de verificación incorrecto' })
+      return res.status(400).json({ message: 'Codigo de verificación incorrecto' })
     }
 
     const userRef = userSnapshot.docs[0]?.ref
@@ -99,6 +99,11 @@ router.get('/status', (req, res) => {
   } catch (error) {
     res.status(401).json({ authenticated: false })
   }
+})
+
+router.post('/logout', (req, res) => {
+  res.clearCookie('auth-token') // Limpia la cookie
+  res.status(200).json({ message: 'Sesión cerrada' })
 })
 
 export default router

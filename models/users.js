@@ -138,10 +138,10 @@ export class userRepository {
     }
   }
 
-  static async addProducts ({ id, productos }) {
+  static async addProducts ({ userID, productos }) {
     try {
       const userQuerySnapshot = await db.collection('users')
-        .where('id', '==', id)
+        .where('id', '==', userID)
         .get() // Obtener la referencia al documento del usuario
 
       if (userQuerySnapshot.empty) {
@@ -153,22 +153,31 @@ export class userRepository {
       const existingProducts = userDoc.data().products || []
 
       const updatedProducts = [...existingProducts]
-      productos.forEach((product) => {
+      // async productos.forEach((product) => {
+      for (const product of productos) {
+        const existingProduct = await productRepository.getProductByID(product.productID)
+        if (existingProduct.stock < product.amount) {
+          throw new Error('Stock insuficiente para el producto')
+        }
+
+        existingProduct.stock -= product.amount
+        await productRepository.editProduct(existingProduct)
+
         const index = existingProducts.findIndex(p => p.productID === product.productID)
         if (index !== -1) {
           updatedProducts[index].amount += product.amount
         } else {
           updatedProducts.push(product)
         }
-      })
+      }
 
       // Actualizar los productos del usuario
       await userDoc.ref.update({ products: updatedProducts })
 
-      console.log('Productos agregados al usuario: ', id, '\n Productos: ', updatedProducts)
+      console.log('Productos agregados al usuario: ', userID, '\n Productos: ', updatedProducts)
     } catch (error) {
       console.error('Error creando usuario en Firestore:', error)
-      throw new Error(error.message || 'Error al crear el usuario') // Asegúrate de lanzar un mensaje específico
+      throw new Error(error.message || 'Error al crear el usuario')
     }
   }
 
