@@ -11,21 +11,21 @@ app.use(cookieParser())
 app.use(json())
 
 // CORS configuration
-const allowedOrigins = ['http://localhost:8100', 'http://localhost:8101', 'http://localhost:5173', 'https://red-tree-03949700f.4.azurestaticapps.net/']
+const allowedOrigins = ['http://localhost:8100', 'http://localhost:8101', 'http://localhost:5173', 'https://red-tree-03949700f.4.azurestaticapps.net']
 
 app.use(
   cors({
     origin: function (origin, callback) {
-      // Verificar si el origen está permitido
-      if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+      if (!origin || allowedOrigins.includes(origin)) {
         callback(null, true)
       } else {
+        console.error('Origen no permitido por CORS:', origin)
         callback(new Error('No permitido por CORS'))
       }
     },
     methods: ['GET', 'POST', 'DELETE', 'PATCH'],
     allowedHeaders: ['Content-Type', 'Authorization'],
-    credentials: true
+    credentials: true // Si estás usando cookies o credenciales
   })
 )
 
