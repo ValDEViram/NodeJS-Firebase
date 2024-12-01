@@ -62,9 +62,12 @@ router.post('/addCategory', async (req, res) => {
 router.get(('/products'), async (req, res) => {
   try {
     const products = await productRepository.getProducts()
-    res.status(201).send(products)
+    res.status(200).send(products)
   } catch (error) {
-    res.status(500).json({ 'Error al conseguir los productos': error })
+    res.status(500).json({
+      message: 'Error al conseguir los productos',
+      error: error.toString()
+    })
   }
 })
 
