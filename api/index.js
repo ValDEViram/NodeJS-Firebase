@@ -38,4 +38,7 @@ app.use('/api/products', productsRouter)
 app.use('/api/auth', authRouter)
 
 // Exportar la app para Vercel
-export default app
+const PORT = process.env.PORT || 3000
+app.listen(PORT, () => {
+  console.log(`Servidor corriendo en el puerto ${PORT}`)
+})
