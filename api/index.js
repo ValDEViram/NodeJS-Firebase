@@ -11,7 +11,7 @@ app.use(cookieParser())
 app.use(json())
 
 // CORS configuration
-const allowedOrigins = ['http://localhost:8100', 'http://localhost:8101', 'http://localhost:5173']
+const allowedOrigins = ['http://localhost:8100', 'http://localhost:8101', 'http://localhost:5173', 'https://red-tree-03949700f.4.azurestaticapps.net/']
 
 app.use(
   cors({
