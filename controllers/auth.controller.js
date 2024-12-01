@@ -1,8 +1,8 @@
-import { db } from '../firebase.js'
 import { userRepository } from '../models/users.js'
 import express from 'express'
 import 'dotenv/config'
 import jwt from 'jsonwebtoken'
+import { connectDB } from '../mongodb.js'
 
 const router = express.Router()
 
@@ -28,24 +28,26 @@ router.post('/register', async (req, res) => {
 router.post('/sendVerification', async (req, res) => {
   const { email, code } = req.body
 
-  if (!email || !code) throw new Error('Tanto el codigo como el correo son requeridos')
+  if (!email || !code) {
+    return res.status(400).json({ message: 'Tanto el código como el correo son requeridos' })
+  }
 
   try {
-    const userSnapshot = await db.collection('users')
-      .where('email', '==', email)
-      .where('regCode', '==', parseInt(code))
-      .get()
+    // Conectamos a la base de datos
+    const db = await connectDB()
 
-    if (userSnapshot.empty) {
-      return res.status(400).json({ message: 'Codigo de verificación incorrecto' })
+    // Realizamos la consulta en la colección de usuarios (MongoDB)
+    const user = await db.collection('users').findOne({ email, regCode: parseInt(code) })
+
+    if (!user) {
+      return res.status(400).json({ message: 'Código de verificación incorrecto' })
     }
 
-    const userRef = userSnapshot.docs[0]?.ref
-
-    if (!userRef) {
-      return res.status(400).json({ message: 'No se encontró el usuario' })
-    }
-    await userRef.update({ validatedAccount: true, regCode: null })
+    // Actualizamos el estado de la cuenta (validada) en MongoDB
+    await db.collection('users').updateOne(
+      { _id: user._id }, // Usamos _id para la actualización en MongoDB
+      { $set: { validatedAccount: true, regCode: null } } // Establecemos los nuevos valores
+    )
 
     res.status(200).json({ message: 'Cuenta verificada exitosamente' })
   } catch (error) {
