@@ -30,5 +30,5 @@ app.get('/', (req, res) => {
 
 app.use('/api/products', productsRouter)
 app.use('/api/auth', authRouter)
-
+// comentario
 export default app
