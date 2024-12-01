@@ -1,6 +1,5 @@
 import express, { json } from 'express'
 import cors from 'cors'
-import uploadRouter from '../controllers/upload.controller.js'
 import productsRouter from '../controllers/products.controller.js'
 import authRouter from '../controllers/auth.controller.js'
 import cookieParser from 'cookie-parser'
@@ -29,7 +28,6 @@ app.get('/', (req, res) => {
   res.status(200).send('Hello, world!')
 })
 
-app.use('/api/upload', uploadRouter)
 app.use('/api/products', productsRouter)
 app.use('/api/auth', authRouter)
 
