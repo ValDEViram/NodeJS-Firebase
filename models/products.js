@@ -46,13 +46,18 @@ export class productRepository {
     if (product.offer !== undefined) updateData.offer = product.offer
     if (product.fetchName !== undefined) updateData.fetchName = product.fetchName
 
-    const result = await db.collection('products').findOneAndUpdate(
-      { _id: product.id },
-      { $set: updateData },
-      { returnDocument: 'after' }
-    )
+    try {
+      const result = await db.collection('products').findOneAndUpdate(
+        { _id: product.id },
+        { $set: updateData },
+        { returnDocument: 'after' }
+      )
 
-    return result.value
+      return result
+    } catch (error) {
+      console.error('Error al actualizar el producto:', error)
+      throw new Error('Error en la base de datos')
+    }
   }
 
   static async getProducts () {

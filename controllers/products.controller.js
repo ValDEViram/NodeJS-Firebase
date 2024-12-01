@@ -26,10 +26,11 @@ router.patch('/editProduct/:id', async (req, res) => {
   try {
     const updatedProduct = await productRepository.editProduct({ id, product, brand, quantity, price, category, stock, offer, fetchName, imgName })
 
+    console.log('Producto actualizado', updatedProduct)
     if (updatedProduct) {
-      res.status(200).send('Producto editado correctamente :)')
+      res.status(200).json({ message: 'Producto editado correctamente :)' })
     } else {
-      res.status(404).send('Producto no encontrado')
+      res.status(404).json({ message: 'Producto no encontrado' })
     }
   } catch (error) {
     console.error('Error al actualizar el producto:', error)
